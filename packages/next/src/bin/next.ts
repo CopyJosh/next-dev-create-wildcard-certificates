@@ -166,6 +166,10 @@ program
     '--experimental-https',
     'Starts the server with HTTPS and generates a self-signed certificate.'
   )
+  .option(
+    '--experimental-https-wildcard',
+    'If generating a self-signed certificate, generates a wildcard certificate for use with subdomains.'
+  )
   .option('--experimental-https-key, <path>', 'Path to a HTTPS key file.')
   .option(
     '--experimental-https-cert, <path>',

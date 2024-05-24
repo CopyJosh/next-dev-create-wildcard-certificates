@@ -41,6 +41,7 @@ type NextDevOptions = {
   port: number
   hostname?: string
   experimentalHttps?: boolean
+  experimentalHttpsWildcard?: boolean
   experimentalHttpsKey?: string
   experimentalHttpsCert?: string
   experimentalHttpsCa?: string
@@ -308,6 +309,7 @@ const nextDev = async (
         const key = options.experimentalHttpsKey
         const cert = options.experimentalHttpsCert
         const rootCA = options.experimentalHttpsCa
+        const wildcard = options.experimentalHttpsWildcard
 
         if (key && cert) {
           certificate = {
@@ -316,7 +318,7 @@ const nextDev = async (
             rootCA: rootCA ? path.resolve(rootCA) : undefined,
           }
         } else {
-          certificate = await createSelfSignedCertificate(host)
+          certificate = await createSelfSignedCertificate({ host, wildcard })
         }
 
         await startServer({

@@ -15,6 +15,12 @@ export interface SelfSignedCertificate {
   rootCA?: string
 }
 
+interface CreateSelfSignedCertificateOptions {
+  host?: string
+  certDir?: string
+  wildcard?: boolean
+}
+
 function getBinaryName() {
   const platform = process.platform
   const arch = process.arch === 'x64' ? 'amd64' : process.arch
@@ -95,10 +101,13 @@ async function downloadBinary() {
   }
 }
 
-export async function createSelfSignedCertificate(
-  host?: string,
-  certDir: string = 'certificates'
-): Promise<SelfSignedCertificate | undefined> {
+export async function createSelfSignedCertificate({
+  host = 'localhost',
+  certDir = 'certificates',
+  wildcard = false,
+}: CreateSelfSignedCertificateOptions): Promise<
+  SelfSignedCertificate | undefined
+> {
   try {
     const binaryPath = await downloadBinary()
     if (!binaryPath) throw new Error('missing mkcert binary')
@@ -109,8 +118,8 @@ export async function createSelfSignedCertificate(
       recursive: true,
     })
 
-    const keyPath = path.resolve(resolvedCertDir, 'localhost-key.pem')
-    const certPath = path.resolve(resolvedCertDir, 'localhost.pem')
+    const keyPath = path.resolve(resolvedCertDir, `${host}-key.pem`)
+    const certPath = path.resolve(resolvedCertDir, `${host}.pem`)
 
     Log.info(
       'Attempting to generate self signed certificate. This may prompt for your password'
@@ -118,10 +127,17 @@ export async function createSelfSignedCertificate(
 
     const defaultHosts = ['localhost', '127.0.0.1', '::1']
 
-    const hosts =
-      host && !defaultHosts.includes(host)
-        ? [...defaultHosts, host]
-        : defaultHosts
+    const hosts = !defaultHosts.includes(host)
+      ? [...defaultHosts, host]
+      : defaultHosts
+
+    if (wildcard && !defaultHosts.includes(host)) {
+      hosts.push(`*.${host}`)
+    } else if (wildcard) {
+      Log.info(
+        'Wildcard certificates are not valid for localhost or 127.0.0.1. Skipping wildcard addition.'
+      )
+    }
 
     execSync(
       `"${binaryPath}" -install -key-file "${keyPath}" -cert-file "${certPath}" ${hosts.join(

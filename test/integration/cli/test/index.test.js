@@ -750,9 +750,94 @@ describe('CLI Usage', () => {
         }
       )
       try {
-        await check(() => output, /Network:\s*http:\/\/\[::\]:(\d+)/)
-        await check(() => output, /https:\/\/localhost:(\d+)/)
+        await check(() => output, /Local:\s*https:\/\/(\[::\]|localhost):(\d+)/)
         await check(() => output, /Certificates created in/)
+      } finally {
+        await killApp(app)
+      }
+    })
+
+    test('--experimental-https-wildcard without hostname', async () => {
+      if (!process.env.CI) {
+        console.warn(
+          '--experimental-https-wildcard only runs on CI as it requires administrator privileges'
+        )
+
+        return
+      }
+
+      const port = await findPort()
+      let output = ''
+      const app = await runNextCommandDev(
+        [
+          dirBasic,
+          '--experimental-https',
+          '--experimental-https-wildcard',
+          '--port',
+          port,
+        ],
+        undefined,
+        {
+          onStdout(msg) {
+            output += stripAnsi(msg)
+          },
+        }
+      )
+      try {
+        await check(
+          () => output,
+          /Wildcard certificates are not valid for localhost/
+        )
+        await check(() => output, /Certificates created in/)
+      } finally {
+        await killApp(app)
+      }
+    })
+
+    test('--experimental-https-wildcard -H 0.0.0.0', async () => {
+      if (!process.env.CI) {
+        console.warn(
+          '--experimental-https-wildcard only runs on CI as it requires administrator privileges'
+        )
+
+        return
+      }
+
+      const port = await findPort()
+      let output = ''
+      const app = await runNextCommandDev(
+        [
+          dirBasic,
+          '--experimental-https',
+          '--experimental-https-wildcard',
+          '-H',
+          '0.0.0.0',
+          '--port',
+          port,
+        ],
+        undefined,
+        {
+          onStdout(msg) {
+            output += stripAnsi(msg)
+          },
+        }
+      )
+      try {
+        await check(() => {
+          const certLocationMatch = output.match(/Certificates created in (.*)/)
+
+          const certLocation = certLocationMatch
+            ? certLocationMatch[1].trim()
+            : ''
+
+          return path.resolve(certLocation, '0.0.0.0.pem')
+        }, /0.0.0.0/)
+        // Only display when hostname is provided
+        await check(
+          () => output,
+          /Network:\s*http:\/\/(\[::\]|0\.0\.0\.0):(\d+)/
+        )
+        await check(() => output, /Local:\s*https:\/\/(\[::\]|localhost):(\d+)/)
       } finally {
         await killApp(app)
       }

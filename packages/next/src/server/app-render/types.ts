@@ -104,6 +104,7 @@ export type FlightDataPath =
       /* treePatch */ FlightRouterState,
       /* cacheNodeSeedData */ CacheNodeSeedData, // Can be null during prefetch if there's no loading component
       /* head */ React.ReactNode | null,
+      /* layerAssets (imported styles/scripts) */ React.ReactNode | null,
     ]
 
 /**
@@ -129,7 +130,7 @@ export interface RenderOptsPartial {
   basePath: string
   trailingSlash: boolean
   clientReferenceManifest?: DeepReadonly<ClientReferenceManifest>
-  supportsDynamicHTML: boolean
+  supportsDynamicResponse: boolean
   runtime?: ServerRuntime
   serverComponents?: boolean
   enableTainting?: boolean
@@ -160,11 +161,6 @@ export interface RenderOptsPartial {
   params?: ParsedUrlQuery
   isPrefetch?: boolean
   experimental: {
-    /**
-     * When true, some routes support partial prerendering (PPR).
-     */
-    isAppPPREnabled: boolean
-
     /**
      * When true, it indicates that the current page supports partial
      * prerendering.
